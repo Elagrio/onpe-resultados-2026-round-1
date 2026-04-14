@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ONPE – Resultados Electorales 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f8; color: #1a3a6e; }
+
+  header {
+    background: #1a3a6e;
+    color: white;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header img { height: 36px; }
+  header h1 { font-size: 16px; font-weight: 600; }
+  header .actualizado { font-size: 11px; opacity: 0.75; margin-left: auto; }
+
+  .avance-bar {
+    background: #e8eef5;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #d0dcea;
+  }
+  .avance-pct { font-size: 28px; font-weight: 800; color: #1a3a6e; }
+  .avance-info { font-size: 12px; color: #555; }
+  .avance-info b { color: #1a3a6e; }
+  .progress-track {
+    flex: 1; min-width: 200px; height: 8px;
+    background: #d0dcea; border-radius: 4px; overflow: hidden;
+  }
+  .progress-fill { height: 100%; background: #1a3a6e; border-radius: 4px; transition: width 0.5s; }
+
+  .tabs {
+    display: flex; gap: 0; overflow-x: auto;
+    background: white;
+    border-bottom: 2px solid #e0e8f0;
+    padding: 0 16px;
+  }
+  .tab {
+    padding: 10px 16px; font-size: 13px; font-weight: 500;
+    border: none; background: none; cursor: pointer;
+    color: #666; white-space: nowrap;
+    border-bottom: 3px solid transparent; margin-bottom: -2px;
+  }
+  .tab.active { color: #1a3a6e; border-bottom-color: #e53935; }
+
+  .contenido { padding: 16px; max-width: 1200px; margin: 0 auto; }
+
+  .chart-container {
+    background: white; border-radius: 12px;
+    padding: 20px 16px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 16px;
+  }
+  .chart-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: #1a3a6e; }
+
+  .barras {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 260px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .barra-item {
+    display: flex; flex-direction: column; align-items: center;
+    min-width: 80px; flex: 1; max-width: 120px;
+    height: 100%;
+    position: relative;
+  }
+
+  .barra-wrap {
+    width: 100%; flex: 1;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    position: relative;
+  }
+
+  .barra-fill {
+    width: 100%;
+    border-radius: 8px 8px 0 0;
+    position: relative;
+    transition: height 0.6s ease;
+    min-height: 4px;
+  }
+
+  .barra-label {
+    position: absolute;
+    bottom: 8px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.95);
+    border: 1px solid rgba(26,58,110,0.15);
+    border-radius: 6px;
+    padding: 4px 8px;
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .barra-label .pct { font-size: 14px; font-weight: 800; color: #1a3a6e; display: block; }
+  .barra-label .votos { font-size: 11px; font-weight: 600; color: #444; display: block; }
+
+  .barra-logo {
+    width: 40px; height: 40px; object-fit: contain;
+    margin-top: 6px; flex-shrink: 0;
+  }
+  .barra-nombre {
+    font-size: 9px; text-align: center; color: #555;
+    margin-top: 3px; line-height: 1.2;
+    max-width: 80px; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+
+  .lista { display: flex; flex-direction: column; gap: 8px; }
+  .lista-item {
+    background: white; border-radius: 10px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .lista-rank { font-size: 16px; font-weight: 800; color: #ccc; min-width: 24px; text-align: center; }
+  .lista-rank.top { color: #1a3a6e; }
+  .lista-logo { width: 36px; height: 36px; object-fit: contain; flex-shrink: 0; }
+  .lista-nombre { flex: 1; font-size: 13px; font-weight: 500; line-height: 1.3; }
+  .lista-datos { text-align: right; }
+  .lista-pct { font-size: 16px; font-weight: 800; color: #1a3a6e; }
+  .lista-votos { font-size: 11px; color: #777; }
+  .lista-bar-track { height: 4px; background: #e8eef5; border-radius: 2px; margin-top: 4px; }
+  .lista-bar-fill { height: 100%; border-radius: 2px; background: #1a3a6e; }
+
+  .loading {
+    text-align: center; padding: 60px 20px; color: #888;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid #e0e8f0;
+    border-top-color: #1a3a6e;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error { background: #fff3f3; border: 1px solid #ffcccc; border-radius: 8px; padding: 16px; color: #c00; font-size: 13px; }
+
+  .view-toggle {
+    display: flex; gap: 8px; margin-bottom: 12px;
+  }
+  .view-btn {
+    padding: 6px 14px; font-size: 12px; border-radius: 20px;
+    border: 1px solid #d0dcea; background: white; cursor: pointer; color: #555;
+  }
+  .view-btn.active { background: #1a3a6e; color: white; border-color: #1a3a6e; }
+
+  @media (max-width: 600px) {
+    .barra-item { min-width: 60px; }
+    .barra-label .pct { font-size: 12px; }
+    .barra-label .votos { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="https://publiconpepage.s3.amazonaws.com/logo-onpe.png" onerror="this.style.display='none'" alt="ONPE">
+  <h1>Resultados Electorales 2026</h1>
+  <span class="actualizado" id="actualizado">Cargando...</span>
+</header>
+
+<div class="avance-bar">
+  <div>
+    <div class="avance-pct" id="avance-pct">--%</div>
+    <div class="avance-info">Actas contabilizadas de <b id="total-actas">--</b></div>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="contenido">
+  <div id="app"><div class="loading"><div class="spinner"></div><span>Cargando resultados...</span></div></div>
+</div>
+
+<script>
+const PROXY = 'https://api.allorigins.win/raw?url=';
+const BASE = 'https://resultadoelectoral.onpe.gob.pe/presentacion-backend/resumen-general';
+const IMG_BASE = 'https://publiconpepage.s3.amazonaws.com';
+
+let elecciones = [];
+let eleccionActual = null;
+let vistaActual = 'barras';
+
+const COLORES_PARTIDO = {
+  8:  '#E53935', // Fuerza Popular - rojo
+  35: '#1565C0', // Renovación Popular - azul
+  16: '#2E7D32', // Buen Gobierno - verde
+  10: '#F57F17', // Juntos por el Perú - amarillo
+  14: '#6A1B9A', // Obras - morado
+  23: '#EF6C00', // País para Todos - naranja
+  2:  '#00838F', // Ahora Nación - teal
+};
+
+function colorPartido(codigo, idx) {
+  if (COLORES_PARTIDO[codigo]) return COLORES_PARTIDO[codigo];
+  const paleta = ['#1565C0','#1976D2','#1E88E5','#2196F3','#42A5F5','#64B5F6','#90CAF9','#BBDEFB'];
+  return paleta[idx % paleta.length];
+}
+
+function fmtVotos(n) {
+  return n.toLocaleString('es-PE');
+}
+
+async function fetchJSON(url) {
+  url = PROXY + encodeURIComponent(url);
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+async function cargarElecciones() {
+  const data = await fetchJSON(`${BASE}/elecciones`);
+  return data.data || data;
+}
+
+async function cargarTotales(idEleccion) {
+  const data = await fetchJSON(`${BASE}/totales?idEleccion=${idEleccion}&tipoFiltro=eleccion`);
+  return data.data || data;
+}
+
+async function cargarParticipantes(idEleccion) {
+  const data = await fetchJSON(`${BASE}/participantes?idEleccion=${idEleccion}&tipoFiltro=eleccion`);
+  return data.data || data;
+}
+
+async function cargarProcesoActivo() {
+  try {
+    const data = await fetchJSON(`${BASE}/proceso-electoral-activo`);
+    return data.data || data;
+  } catch { return null; }
+}
+
+function renderTabs() {
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = elecciones.map(e =>
+    `<button class="tab ${e.idEleccion === eleccionActual?.idEleccion ? 'active' : ''}"
+      onclick="cambiarEleccion(${e.idEleccion})">${e.nombreEleccion || e.nombre || 'Elección ' + e.idEleccion}</button>`
+  ).join('');
+}
+
+function renderBarras(participantes) {
+  if (!participantes.length) return '<div class="error">Sin datos disponibles</div>';
+
+  const sorted = [...participantes].filter(p => p.totalVotosValidos > 0)
+    .sort((a,b) => b.totalVotosValidos - a.totalVotosValidos);
+
+  if (!sorted.length) return '<div class="error">Aún no hay votos contabilizados para esta elección.</div>';
+
+  const max = sorted[0].totalVotosValidos;
+
+  return `
+    <div class="view-toggle">
+      <button class="view-btn ${vistaActual==='barras'?'active':''}" onclick="cambiarVista('barras')">📊 Barras</button>
+      <button class="view-btn ${vistaActual==='lista'?'active':''}" onclick="cambiarVista('lista')">📋 Lista</button>
+    </div>
+    ${vistaActual === 'barras' ? renderGraficoBarras(sorted, max) : renderGraficoLista(sorted, max)}
+  `;
+}
+
+function renderGraficoBarras(sorted, max) {
+  return `<div class="barras">
+    ${sorted.map((p, i) => {
+      const pct = p.porcentajeVotosValidos || 0;
+      const altura = max > 0 ? Math.max(4, (p.totalVotosValidos / max) * 100) : 4;
+      const color = colorPartido(p.codigoAgrupacionPolitica, i);
+      const logoUrl = `${IMG_BASE}/partidos/${String(p.codigoAgrupacionPolitica).padStart(8,'0')}.jpg`;
+      return `
+        <div class="barra-item">
+          <div class="barra-wrap">
+            <div class="barra-fill" style="height:${altura}%;background:${color}">
+              <div class="barra-label">
+                <span class="pct">${pct.toFixed(3)}%</span>
+                <span class="votos">${fmtVotos(p.totalVotosValidos)}</span>
+              </div>
+            </div>
+          </div>
+          <img class="barra-logo" src="${logoUrl}" onerror="this.style.opacity=0" alt="${p.nombreAgrupacionPolitica}">
+          <div class="barra-nombre">${p.nombreAgrupacionPolitica}</div>
+        </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function renderGraficoLista(sorted, max) {
+  return `<div class="lista">
+    ${sorted.map((p, i) => {
+      const pct = p.porcentajeVotosValidos || 0;
+      const barWidth = max > 0 ? (p.totalVotosValidos / max * 100).toFixed(1) : 0;
+      const color = colorPartido(p.codigoAgrupacionPolitica, i);
+      const logoUrl = `${IMG_BASE}/partidos/${String(p.codigoAgrupacionPolitica).padStart(8,'0')}.jpg`;
+      return `
+        <div class="lista-item">
+          <div class="lista-rank ${i < 3 ? 'top' : ''}">${i+1}</div>
+          <img class="lista-logo" src="${logoUrl}" onerror="this.style.opacity=0" alt="">
+          <div style="flex:1">
+            <div class="lista-nombre">${p.nombreAgrupacionPolitica}</div>
+            <div class="lista-bar-track"><div class="lista-bar-fill" style="width:${barWidth}%;background:${color}"></div></div>
+          </div>
+          <div class="lista-datos">
+            <div class="lista-pct">${pct.toFixed(3)}%</div>
+            <div class="lista-votos">${fmtVotos(p.totalVotosValidos)} votos</div>
+          </div>
+        </div>`;
+    }).join('')}
+  </div>`;
+}
+
+async function cargarDatos(idEleccion) {
+  const app = document.getElementById('app');
+  app.innerHTML = '<div class="loading"><div class="spinner"></div><span>Cargando...</span></div>';
+  try {
+    const [totales, participantes] = await Promise.all([
+      cargarTotales(idEleccion),
+      cargarParticipantes(idEleccion)
+    ]);
+
+    // Totales
+    const t = Array.isArray(totales) ? totales[0] : totales;
+    if (t) {
+      const pctContab = t.porcentajeActasContabilizadas || t.porcentaje || 0;
+      document.getElementById('avance-pct').textContent = pctContab.toFixed(3) + '%';
+      document.getElementById('total-actas').textContent = fmtVotos(t.totalActas || t.total || 0);
+      document.getElementById('progress-fill').style.width = pctContab + '%';
+      const fecha = t.fechaActualizacion || t.fecha || '';
+      if (fecha) document.getElementById('actualizado').textContent = 'Actualizado: ' + fecha;
+    }
+
+    // Render
+    app.innerHTML = `
+      <div class="chart-container">
+        <div class="chart-title">${eleccionActual?.nombreEleccion || ''}</div>
+        ${renderBarras(Array.isArray(participantes) ? participantes : [])}
+      </div>`;
+  } catch(e) {
+    app.innerHTML = `<div class="error">Error al cargar datos: ${e.message}<br><br>
+      <small>Verifica que estés en una red que permita acceso a resultadoelectoral.onpe.gob.pe</small></div>`;
+  }
+}
+
+async function cambiarEleccion(idEleccion) {
+  eleccionActual = elecciones.find(e => e.idEleccion === idEleccion);
+  renderTabs();
+  await cargarDatos(idEleccion);
+}
+
+function cambiarVista(vista) {
+  vistaActual = vista;
+  cargarDatos(eleccionActual.idEleccion);
+}
+
+async function init() {
+  try {
+    elecciones = await cargarElecciones();
+    if (!elecciones.length) throw new Error('Sin elecciones disponibles');
+    eleccionActual = elecciones.find(e => e.idEleccion === 10) || elecciones[0];
+    renderTabs();
+    await cargarDatos(eleccionActual.idEleccion);
+
+    // Auto-refresh cada 2 minutos
+    setInterval(() => cargarDatos(eleccionActual.idEleccion), 120000);
+  } catch(e) {
+    document.getElementById('app').innerHTML =
+      `<div class="error">No se pudo conectar con la API de ONPE: ${e.message}</div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
